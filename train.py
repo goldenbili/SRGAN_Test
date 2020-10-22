@@ -30,7 +30,7 @@ if __name__ == '__main__':
     NUM_EPOCHS = opt.num_epochs
     TRAIN_PATH = opt.train_path
     VALID_PATH = opt.valid_path
-    EPOCH_RECORD_NUM = opt.epoch_record
+    EPOCH_RECORD_NUM = opt.epochs_record
 
     train_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     val_set = ValDatasetFromFolder('data/DIV2K_valid_HR', upscale_factor=UPSCALE_FACTOR)
