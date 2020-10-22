@@ -17,7 +17,8 @@ parser = argparse.ArgumentParser(description='Train Super Resolution Models')
 parser.add_argument('--crop_size', default=88, type=int, help='training images crop size')
 parser.add_argument('--upscale_factor', default=4, type=int, choices=[1, 2, 4, 8],
                     help='super resolution upscale factor')
-parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
+parser.add_argument('--num_epochs', default=300, type=int, help='train epoch number')
+parser.add_argument('--epochs_record', default=200, type=int, help='record epoch limit')
 parser.add_argument('--train_path', default='data/DIV2K_train_HR', type=str, help='train path')
 parser.add_argument('--valid_path', default='data/DIV2K_valid_HR', type=str, help='valid path')
 
@@ -29,6 +30,7 @@ if __name__ == '__main__':
     NUM_EPOCHS = opt.num_epochs
     TRAIN_PATH = opt.train_path
     VALID_PATH = opt.valid_path
+    EPOCH_RECORD_NUM = opt.epoch_record
 
     train_set = TrainDatasetFromFolder(TRAIN_PATH, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     val_set = ValDatasetFromFolder('data/DIV2K_valid_HR', upscale_factor=UPSCALE_FACTOR)
@@ -140,16 +142,22 @@ if __name__ == '__main__':
                      display_transform()(sr.data.cpu().squeeze(0))])
             val_images = torch.stack(val_images)
             val_images = torch.chunk(val_images, val_images.size(0) // 15)
-            val_save_bar = tqdm(val_images, desc='[saving training results]')
-            index = 1
-            for image in val_save_bar:
-                image = utils.make_grid(image, nrow=3, padding=5)
-                utils.save_image(image, out_path + 'epoch_%d_index_%d.png' % (epoch, index), padding=5)
-                index += 1
+            if epoch > EPOCH_RECORD_NUM:
+                # 20201021: Willy :
+                val_save_bar = tqdm(val_images, desc='[saving training results]')
+                index = 1
+                for image in val_save_bar:
+                    image = utils.make_grid(image, nrow=3, padding=5)
+                    utils.save_image(image, out_path + 'epoch_%d_index_%d.png' % (epoch, index), padding=5)
+                    index += 1
+
 
         # save model parameters
-        torch.save(netG.state_dict(), 'epochs/netG_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
-        torch.save(netD.state_dict(), 'epochs/netD_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
+        if epoch > EPOCH_RECORD_NUM:
+            torch.save(netG.state_dict(), 'epochs/netG_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
+            torch.save(netD.state_dict(), 'epochs/netD_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
+
+
         # save loss\scores\psnr\ssim
         results['d_loss'].append(running_results['d_loss'] / running_results['batch_sizes'])
         results['g_loss'].append(running_results['g_loss'] / running_results['batch_sizes'])
