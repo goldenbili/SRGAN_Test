@@ -83,6 +83,10 @@ if __name__ == '__main__':
             d_loss.backward(retain_graph=True)
             optimizerD.step()
 
+            # willy test
+            print"fake_img's shape: " + (fake_img.shape))
+            print"real_img's shape: " + (real_img.shape))
+            
             ############################
             # (2) Update G network: minimize 1-D(G(z)) + Perception Loss + Image Loss + TV Loss
             ###########################
