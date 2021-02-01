@@ -63,10 +63,11 @@ if __name__ == '__main__':
 
     netG = Generator()
     if TRAIN_RESULT_FOLDER:
-        print('TRAIN_RESULT_FOLDER:' + TRAIN_RESULT_FOLDER)
-        print('TRAIN_RESULT_PARAMETERS:' + TRAIN_RESULT_PARAMETERS)
-        netG.load_state_dict(torch.load(TRAIN_RESULT_FOLDER + TRAIN_RESULT_PARAMETERS,
-                                        _use_new_zipfile_serialization=True))
+        if USE_CUDA == 1 and torch.cuda.is_available():
+            netG.load_state_dict(torch.load(TRAIN_RESULT_FOLDER + TRAIN_RESULT_PARAMETERS))
+        else:
+            netG.load_state_dict(torch.load(TRAIN_RESULT_FOLDER + TRAIN_RESULT_PARAMETERS, map_location='cpu'))
+
     else:
         print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
 
@@ -91,7 +92,8 @@ if __name__ == '__main__':
 
         netG.train()
         netD.train()
-        for data, target in train_bar:
+        print ('before train bar')
+        for data, target, rgb, path in train_bar:
             g_update_first = True
             batch_size = data.size(0)
             running_results['batch_sizes'] += batch_size
@@ -105,11 +107,15 @@ if __name__ == '__main__':
             z = Variable(data)
             if USE_CUDA == 1 and torch.cuda.is_available():
                 z = z.cuda()
+            print('In train bar-1')
             fake_img = netG(z)
-
+            print('In train bar-2')
             netD.zero_grad()
+            print('In train bar-3')
             real_out = netD(real_img).mean()
+            print('In train bar-4')
             fake_out = netD(fake_img).mean()
+            print('In train bar-5')
 
             d_loss = 1 - real_out + fake_out
             d_loss.backward(retain_graph=True)
@@ -144,11 +150,13 @@ if __name__ == '__main__':
         if not os.path.exists(out_path):
             os.makedirs(out_path)
 
+        # do eval
         with torch.no_grad():
             val_bar = tqdm(val_loader)
             valing_results = {'mse': 0, 'ssims': 0, 'psnr': 0, 'ssim': 0, 'batch_sizes': 0}
             val_images = []
-            for val_lr, val_hr_restore, val_hr in val_bar:
+            # for val_lr, val_hr_restore, val_hr in val_bar:
+            for val_lr, val_hr, rgb, path in val_bar:
                 batch_size = val_lr.size(0)
                 valing_results['batch_sizes'] += batch_size
                 lr = val_lr
@@ -170,8 +178,11 @@ if __name__ == '__main__':
                         valing_results['psnr'], valing_results['ssim']))
 
                 val_images.extend(
-                    [display_transform()(val_hr_restore.squeeze(0)), display_transform()(hr.data.cpu().squeeze(0)),
-                     display_transform()(sr.data.cpu().squeeze(0))])
+                    [display_transform()(
+                        val_lr.squeeze(0)),
+                        display_transform()(hr.data.cpu().squeeze(0)),
+                        display_transform()(sr.data.cpu().squeeze(0))]
+                )
             val_images = torch.stack(val_images)
             val_images = torch.chunk(val_images, val_images.size(0) // 15)
             val_save_bar = tqdm(val_images, desc='[saving training results]')

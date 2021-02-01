@@ -207,7 +207,7 @@ class TrainDatasetFromFolder(Dataset):
             rgb_unit = torch.from_numpy(rgb).float()
             list_tensor_rgb.append(rgb_unit)
 
-        return list_tensor_yuv444, list_tensor_yuv420, list_tensor_rgb, data_orig_path
+        return list_tensor_yuv420, list_tensor_yuv444, list_tensor_rgb, data_orig_path
 
     def __len__(self):
         return len(self.image_filenames)
@@ -246,7 +246,7 @@ class ValDatasetFromFolder(Dataset):
             rgb_unit = torch.from_numpy(rgb).float()
             list_tensor_rgb.append(rgb_unit)
 
-        return list_tensor_yuv444, list_tensor_yuv420, list_tensor_rgb, data_orig_path
+        return list_tensor_yuv420, list_tensor_yuv444, list_tensor_rgb, data_orig_path
 
     def __len__(self):
         return len(self.image_filenames)
