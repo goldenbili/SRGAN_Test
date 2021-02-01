@@ -65,7 +65,8 @@ if __name__ == '__main__':
     if TRAIN_RESULT_FOLDER:
         print('TRAIN_RESULT_FOLDER:' + TRAIN_RESULT_FOLDER)
         print('TRAIN_RESULT_PARAMETERS:' + TRAIN_RESULT_PARAMETERS)
-        netG.load_state_dict(torch.load(TRAIN_RESULT_FOLDER + TRAIN_RESULT_PARAMETERS))
+        netG.load_state_dict(torch.load(TRAIN_RESULT_FOLDER + TRAIN_RESULT_PARAMETERS,
+                                        _use_new_zipfile_serialization=True))
     else:
         print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
 
