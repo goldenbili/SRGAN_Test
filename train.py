@@ -22,12 +22,16 @@ parser = argparse.ArgumentParser(description='Train Super Resolution Models')
 parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
 parser.add_argument('--use_cuda', type=int, default=0)
 parser.add_argument('--batch_size', type=int, default=1)
-parser.add_argument('--snapshots_folder', type=str, default='')
-parser.add_argument('--snapshots_train_data', type=str, default='')
+parser.add_argument('--block_width', type=int, default=32)
+parser.add_argument('--block_height', type=int, default=32)
 parser.add_argument('--train_path', type=str, default='')
 parser.add_argument('--valid_path', type=str, default='')
 parser.add_argument('--statistics_path', type=str, default='')
 parser.add_argument('--epochs_path', type=str, default='')
+parser.add_argument('--snapshots_folder', type=str, default='')
+parser.add_argument('--snapshots_train_data', type=str, default='')
+
+
 '''
 statistics
 
@@ -39,6 +43,8 @@ if __name__ == '__main__':
 
     # CROP_SIZE = opt.crop_size
     # UPSCALE_FACTOR = opt.upscale_factor
+    BK_WIDTH = opt.block_width
+    BK_HEIGHT = opt.block_height
     NUM_EPOCHS = opt.num_epochs
     USE_CUDA = opt.use_cuda
     BATCH_SIZE = opt.batch_size
@@ -50,8 +56,8 @@ if __name__ == '__main__':
     # train_set = TrainDatasetFromFolder('data/DIV2K_train_HR', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     # train_set = TrainDatasetFromFolder('data/DIV2K_test_index', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     # val_set = ValDatasetFromFolder('data/DIV2K_valid_HR', upscale_factor=UPSCALE_FACTOR)
-    train_set = TrainDatasetFromFolder(TRAIN_PATH)
-    val_set = ValDatasetFromFolder(VALID_PATH)
+    train_set = TrainDatasetFromFolder(TRAIN_PATH, BK_WIDTH, BK_HEIGHT)
+    val_set = ValDatasetFromFolder(VALID_PATH, BK_WIDTH, BK_HEIGHT)
     train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=1, shuffle=False)
 
