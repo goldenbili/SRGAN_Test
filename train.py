@@ -63,6 +63,8 @@ if __name__ == '__main__':
 
     netG = Generator()
     if TRAIN_RESULT_FOLDER:
+        print('TRAIN_RESULT_FOLDER:' + TRAIN_RESULT_FOLDER)
+        print('TRAIN_RESULT_PARAMETERS:' + TRAIN_RESULT_PARAMETERS)
         netG.load_state_dict(torch.load(TRAIN_RESULT_FOLDER + TRAIN_RESULT_PARAMETERS))
     else:
         print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
