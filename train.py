@@ -16,9 +16,9 @@ from loss import GeneratorLoss
 from model import Generator, Discriminator
 
 parser = argparse.ArgumentParser(description='Train Super Resolution Models')
-parser.add_argument('--crop_size', default=88, type=int, help='training images crop size')
-parser.add_argument('--upscale_factor', default=1, type=int, choices=[1, 2, 4, 8],
-                    help='super resolution upscale factor')
+# parser.add_argument('--crop_size', default=88, type=int, help='training images crop size')
+# parser.add_argument('--upscale_factor', default=1, type=int, choices=[1, 2, 4, 8],
+#                    help='super resolution upscale factor')
 parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
 parser.add_argument('--use_cuda', type=int, default=0)
 parser.add_argument('--batch_size', type=int, default=1)
@@ -37,8 +37,8 @@ epochs
 if __name__ == '__main__':
     opt = parser.parse_args()
 
-    CROP_SIZE = opt.crop_size
-    UPSCALE_FACTOR = opt.upscale_factor
+    # CROP_SIZE = opt.crop_size
+    # UPSCALE_FACTOR = opt.upscale_factor
     NUM_EPOCHS = opt.num_epochs
     USE_CUDA = opt.use_cuda
     BATCH_SIZE = opt.batch_size
@@ -50,8 +50,8 @@ if __name__ == '__main__':
     # train_set = TrainDatasetFromFolder('data/DIV2K_train_HR', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     # train_set = TrainDatasetFromFolder('data/DIV2K_test_index', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     # val_set = ValDatasetFromFolder('data/DIV2K_valid_HR', upscale_factor=UPSCALE_FACTOR)
-    train_set = TrainDatasetFromFolder('data/DIV2K_train_HR')
-    val_set = ValDatasetFromFolder('data/DIV2K_valid_HR')
+    train_set = TrainDatasetFromFolder(TRAIN_PATH)
+    val_set = ValDatasetFromFolder(VALID_PATH)
     train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=1, shuffle=False)
 
@@ -131,7 +131,7 @@ if __name__ == '__main__':
                 running_results['g_score'] / running_results['batch_sizes']))
 
         netG.eval()
-        out_path = 'training_results/SRF_' + str(UPSCALE_FACTOR) + '/'
+        out_path = 'training_results/SRF_' + str(epoch) + '/'
         if not os.path.exists(out_path):
             os.makedirs(out_path)
 
@@ -192,4 +192,4 @@ if __name__ == '__main__':
                 data={'Loss_D': results['d_loss'], 'Loss_G': results['g_loss'], 'Score_D': results['d_score'],
                       'Score_G': results['g_score'], 'PSNR': results['psnr'], 'SSIM': results['ssim']},
                 index=range(1, epoch + 1))
-            data_frame.to_csv(out_path + 'srf_' + str(UPSCALE_FACTOR) + '_train_results.csv', index_label='Epoch')
+            data_frame.to_csv(out_path + 'srf_' + str(epoch) + '_train_results.csv', index_label='Epoch')
