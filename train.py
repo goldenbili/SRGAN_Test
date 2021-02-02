@@ -125,14 +125,22 @@ if __name__ == '__main__':
                 ############################
                 # (2) Update G network: minimize 1-D(G(z)) + Perception Loss + Image Loss + TV Loss
                 ###########################
+                '''
                 netG.zero_grad()
                 g_loss = generator_criterion(fake_out, fake_img, real_img)
-                g_loss.backward()
+
                 optimizerG.step()
 
                 fake_img = netG(z)
                 fake_out = netD(fake_img).mean()
 
+                g_loss.backward()
+                '''
+                netG.zero_grad()
+                fake_img = netG(z)
+                fake_out = netD(fake_img).mean()
+                g_loss = generator_criterion(fake_out, fake_img, real_img)
+                g_loss.backward()
 
 
                 # loss for current batch before optimization
