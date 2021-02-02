@@ -31,7 +31,6 @@ parser.add_argument('--epochs_path', type=str, default='')
 parser.add_argument('--snapshots_folder', type=str, default='')
 parser.add_argument('--snapshots_train_data', type=str, default='')
 
-
 '''
 statistics
 
@@ -92,7 +91,7 @@ if __name__ == '__main__':
 
         netG.train()
         netD.train()
-        print('before train bar')
+
         for datas, targets, rgbs, path in train_bar:
 
             for index in range(len(datas)):
@@ -101,6 +100,10 @@ if __name__ == '__main__':
                 index_size = len(datas)
                 g_update_first = True
                 batch_size = data.size(0)
+
+                if index < 10:
+                    print('epoch:' + str(epoch) + 'index:' + str(index))
+
                 running_results['batch_sizes'] += batch_size
 
                 ############################
@@ -144,13 +147,22 @@ if __name__ == '__main__':
                 g_loss.backward()
 
                 # loss for current batch before optimization
+                if index < 10:
+                    print('batch_size:' + str(batch_size) +
+                          ' g_loss:' + str(g_loss.item() * batch_size) +
+                          ' d_loss:' + str(d_loss.item() * batch_size) +
+                          ' d_score:' + str(real_out.item() * batch_size) +
+                          ' g_score:' + str(fake_out.item() * batch_size)
+                          )
+
                 running_results['g_loss'] += g_loss.item() * batch_size
                 running_results['d_loss'] += d_loss.item() * batch_size
                 running_results['d_score'] += real_out.item() * batch_size
                 running_results['g_score'] += fake_out.item() * batch_size
 
                 train_bar.set_description(
-                    desc='epochs:[%d/%d] index:[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f batch_size%d '
+                    desc='epochs:[%d/%d] index:[%d/%d] Loss_D: %.4f '
+                         'Loss_G: %.4f D(x): %.4f D(G(z)): %.4f batch_size: %d '
                          % (epoch, NUM_EPOCHS, index, index_size,
                             running_results['d_loss'],
                             running_results['g_loss'],
