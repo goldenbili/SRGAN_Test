@@ -113,15 +113,10 @@ if __name__ == '__main__':
                 z = Variable(data)
                 if USE_CUDA == 1 and torch.cuda.is_available():
                     z = z.cuda()
-                print('In train bar-1')
                 fake_img = netG(z)
-                print('In train bar-2')
                 netD.zero_grad()
-                print('In train bar-3')
                 real_out = netD(real_img).mean()
-                print('In train bar-4')
                 fake_out = netD(fake_img).mean()
-                print('In train bar-5')
 
                 d_loss = 1 - real_out + fake_out
                 d_loss.backward(retain_graph=True)
@@ -133,11 +128,12 @@ if __name__ == '__main__':
                 netG.zero_grad()
                 g_loss = generator_criterion(fake_out, fake_img, real_img)
                 g_loss.backward()
+                optimizerG.step()
 
                 fake_img = netG(z)
                 fake_out = netD(fake_img).mean()
 
-                optimizerG.step()
+
 
                 # loss for current batch before optimization
                 running_results['g_loss'] += g_loss.item() * batch_size
