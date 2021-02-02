@@ -92,97 +92,106 @@ if __name__ == '__main__':
 
         netG.train()
         netD.train()
-        print ('before train bar')
-        for data, target, rgb, path in train_bar:
-            g_update_first = True
-            batch_size = data.size(0)
-            running_results['batch_sizes'] += batch_size
+        print('before train bar')
+        for datas, targets, rgbs, path in train_bar:
 
-            ############################
-            # (1) Update D network: maximize D(x)-1-D(G(z))
-            ###########################
-            real_img = Variable(target)
-            if USE_CUDA == 1 and torch.cuda.is_available():
-                real_img = real_img.cuda()
-            z = Variable(data)
-            if USE_CUDA == 1 and torch.cuda.is_available():
-                z = z.cuda()
-            print('In train bar-1')
-            fake_img = netG(z)
-            print('In train bar-2')
-            netD.zero_grad()
-            print('In train bar-3')
-            real_out = netD(real_img).mean()
-            print('In train bar-4')
-            fake_out = netD(fake_img).mean()
-            print('In train bar-5')
+            for index in range(len(datas)):
+                # unit_img_orig = img_orig[index]
+                # unit_img_haze = img_haze[index]
+                data = datas[index]
+                target = targets[index]
+                g_update_first = True
+                batch_size = data.size(0)
+                running_results['batch_sizes'] += batch_size
 
-            d_loss = 1 - real_out + fake_out
-            d_loss.backward(retain_graph=True)
-            optimizerD.step()
+                ############################
+                # (1) Update D network: maximize D(x)-1-D(G(z))
+                ###########################
+                real_img = Variable(target)
+                if USE_CUDA == 1 and torch.cuda.is_available():
+                    real_img = real_img.cuda()
+                z = Variable(data)
+                if USE_CUDA == 1 and torch.cuda.is_available():
+                    z = z.cuda()
+                print('In train bar-1')
+                fake_img = netG(z)
+                print('In train bar-2')
+                netD.zero_grad()
+                print('In train bar-3')
+                real_out = netD(real_img).mean()
+                print('In train bar-4')
+                fake_out = netD(fake_img).mean()
+                print('In train bar-5')
 
-            ############################
-            # (2) Update G network: minimize 1-D(G(z)) + Perception Loss + Image Loss + TV Loss
-            ###########################
-            netG.zero_grad()
-            g_loss = generator_criterion(fake_out, fake_img, real_img)
-            g_loss.backward()
+                d_loss = 1 - real_out + fake_out
+                d_loss.backward(retain_graph=True)
+                optimizerD.step()
 
-            fake_img = netG(z)
-            fake_out = netD(fake_img).mean()
+                ############################
+                # (2) Update G network: minimize 1-D(G(z)) + Perception Loss + Image Loss + TV Loss
+                ###########################
+                netG.zero_grad()
+                g_loss = generator_criterion(fake_out, fake_img, real_img)
+                g_loss.backward()
 
-            optimizerG.step()
+                fake_img = netG(z)
+                fake_out = netD(fake_img).mean()
 
-            # loss for current batch before optimization 
-            running_results['g_loss'] += g_loss.item() * batch_size
-            running_results['d_loss'] += d_loss.item() * batch_size
-            running_results['d_score'] += real_out.item() * batch_size
-            running_results['g_score'] += fake_out.item() * batch_size
+                optimizerG.step()
 
-            train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f' % (
-                epoch, NUM_EPOCHS, running_results['d_loss'] / running_results['batch_sizes'],
-                running_results['g_loss'] / running_results['batch_sizes'],
-                running_results['d_score'] / running_results['batch_sizes'],
-                running_results['g_score'] / running_results['batch_sizes']))
+                # loss for current batch before optimization
+                running_results['g_loss'] += g_loss.item() * batch_size
+                running_results['d_loss'] += d_loss.item() * batch_size
+                running_results['d_score'] += real_out.item() * batch_size
+                running_results['g_score'] += fake_out.item() * batch_size
 
-        netG.eval()
+                train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f' % (
+                    epoch, NUM_EPOCHS, running_results['d_loss'] / running_results['batch_sizes'],
+                    running_results['g_loss'] / running_results['batch_sizes'],
+                    running_results['d_score'] / running_results['batch_sizes'],
+                    running_results['g_score'] / running_results['batch_sizes']))
+
         out_path = 'training_results/SRF_' + str(epoch) + '/'
         if not os.path.exists(out_path):
             os.makedirs(out_path)
 
         # do eval
+        netG.eval()
         with torch.no_grad():
             val_bar = tqdm(val_loader)
             valing_results = {'mse': 0, 'ssims': 0, 'psnr': 0, 'ssim': 0, 'batch_sizes': 0}
             val_images = []
             # for val_lr, val_hr_restore, val_hr in val_bar:
-            for val_lr, val_hr, rgb, path in val_bar:
-                batch_size = val_lr.size(0)
-                valing_results['batch_sizes'] += batch_size
-                lr = val_lr
-                hr = val_hr
-                if USE_CUDA == 1 and torch.cuda.is_available():
-                    lr = lr.cuda()
-                    hr = hr.cuda()
-                sr = netG(lr)
+            for val_lrs, val_hrs, rgbs, path in val_bar:
+                val_lr = val_lrs[index]
+                val_hr = val_hrs[index]
+                for index in range(len(datas)):
+                    batch_size = val_lr.size(0)
+                    valing_results['batch_sizes'] += batch_size
+                    lr = val_lr
+                    hr = val_hr
+                    if USE_CUDA == 1 and torch.cuda.is_available():
+                        lr = lr.cuda()
+                        hr = hr.cuda()
+                    sr = netG(lr)
 
-                batch_mse = ((sr - hr) ** 2).data.mean()
-                valing_results['mse'] += batch_mse * batch_size
-                batch_ssim = pytorch_ssim.ssim(sr, hr).item()
-                valing_results['ssims'] += batch_ssim * batch_size
-                valing_results['psnr'] = 10 * log10((hr.max() ** 2) / (valing_results['mse']
-                                                                       / valing_results['batch_sizes']))
-                valing_results['ssim'] = valing_results['ssims'] / valing_results['batch_sizes']
-                val_bar.set_description(
-                    desc='[converting LR images to SR images] PSNR: %.4f dB SSIM: %.4f' % (
-                        valing_results['psnr'], valing_results['ssim']))
+                    batch_mse = ((sr - hr) ** 2).data.mean()
+                    valing_results['mse'] += batch_mse * batch_size
+                    batch_ssim = pytorch_ssim.ssim(sr, hr).item()
+                    valing_results['ssims'] += batch_ssim * batch_size
+                    valing_results['psnr'] = 10 * log10((hr.max() ** 2) / (valing_results['mse']
+                                                                           / valing_results['batch_sizes']))
+                    valing_results['ssim'] = valing_results['ssims'] / valing_results['batch_sizes']
+                    val_bar.set_description(
+                        desc='[converting LR images to SR images] PSNR: %.4f dB SSIM: %.4f' % (
+                            valing_results['psnr'], valing_results['ssim']))
 
-                val_images.extend(
-                    [display_transform()(
-                        val_lr.squeeze(0)),
-                        display_transform()(hr.data.cpu().squeeze(0)),
-                        display_transform()(sr.data.cpu().squeeze(0))]
-                )
+                    val_images.extend(
+                        [display_transform()(
+                            val_lr.squeeze(0)),
+                            display_transform()(hr.data.cpu().squeeze(0)),
+                            display_transform()(sr.data.cpu().squeeze(0))]
+                    )
             val_images = torch.stack(val_images)
             val_images = torch.chunk(val_images, val_images.size(0) // 15)
             val_save_bar = tqdm(val_images, desc='[saving training results]')
