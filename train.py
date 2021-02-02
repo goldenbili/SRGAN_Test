@@ -96,10 +96,9 @@ if __name__ == '__main__':
         for datas, targets, rgbs, path in train_bar:
 
             for index in range(len(datas)):
-                # unit_img_orig = img_orig[index]
-                # unit_img_haze = img_haze[index]
                 data = datas[index]
                 target = targets[index]
+                index_size = len(datas)
                 g_update_first = True
                 batch_size = data.size(0)
                 running_results['batch_sizes'] += batch_size
@@ -125,6 +124,7 @@ if __name__ == '__main__':
                 ############################
                 # (2) Update G network: minimize 1-D(G(z)) + Perception Loss + Image Loss + TV Loss
                 ###########################
+                # willy change:
                 '''
                 netG.zero_grad()
                 g_loss = generator_criterion(fake_out, fake_img, real_img)
@@ -136,12 +136,12 @@ if __name__ == '__main__':
 
                 g_loss.backward()
                 '''
+
                 netG.zero_grad()
                 fake_img = netG(z)
                 fake_out = netD(fake_img).mean()
                 g_loss = generator_criterion(fake_out, fake_img, real_img)
                 g_loss.backward()
-
 
                 # loss for current batch before optimization
                 running_results['g_loss'] += g_loss.item() * batch_size
@@ -149,11 +149,25 @@ if __name__ == '__main__':
                 running_results['d_score'] += real_out.item() * batch_size
                 running_results['g_score'] += fake_out.item() * batch_size
 
+                train_bar.set_description(
+                    desc='epochs:[%d/%d] index:[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f batch_size%d '
+                         % (epoch, NUM_EPOCHS, index, index_size,
+                            running_results['d_loss'],
+                            running_results['g_loss'],
+                            running_results['d_score'],
+                            running_results['g_score'],
+                            running_results['batch_sizes']
+                            )
+                )
+
+                '''
                 train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f' % (
-                    epoch, NUM_EPOCHS, running_results['d_loss'] / running_results['batch_sizes'],
+                    epoch, NUM_EPOCHS, 
+                    running_results['d_loss'] / running_results['batch_sizes'],
                     running_results['g_loss'] / running_results['batch_sizes'],
                     running_results['d_score'] / running_results['batch_sizes'],
                     running_results['g_score'] / running_results['batch_sizes']))
+                '''
 
         out_path = 'training_results/SRF_' + str(epoch) + '/'
         if not os.path.exists(out_path):
