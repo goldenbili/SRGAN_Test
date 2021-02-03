@@ -145,7 +145,8 @@ if __name__ == '__main__':
                 fake_out = netD(fake_img).mean()
                 g_loss = generator_criterion(fake_out, fake_img, real_img)
                 g_loss.backward()
-
+                optimizerG.step()
+                
                 # loss for current batch before optimization
                 if index < 10:
                     print('batch_size:' + str(batch_size) +
