@@ -15,6 +15,7 @@ from data_utils import TrainDatasetFromFolder, ValDatasetFromFolder, display_tra
 from loss import GeneratorLoss
 from model import Generator, Discriminator
 
+
 parser = argparse.ArgumentParser(description='Train Super Resolution Models')
 # parser.add_argument('--crop_size', default=88, type=int, help='training images crop size')
 # parser.add_argument('--upscale_factor', default=1, type=int, choices=[1, 2, 4, 8],
@@ -24,18 +25,14 @@ parser.add_argument('--use_cuda', type=int, default=0)
 parser.add_argument('--batch_size', type=int, default=1)
 parser.add_argument('--block_width', type=int, default=32)
 parser.add_argument('--block_height', type=int, default=32)
-parser.add_argument('--train_path', type=str, default='')
-parser.add_argument('--valid_path', type=str, default='')
-parser.add_argument('--statistics_path', type=str, default='')
-parser.add_argument('--epochs_path', type=str, default='')
-parser.add_argument('--snapshots_folder', type=str, default='')
-parser.add_argument('--snapshots_train_data', type=str, default='')
-
-'''
-statistics
-
-epochs
-'''
+parser.add_argument('--train_path', type=str, default='data/train_min')
+parser.add_argument('--valid_path', type=str, default='data/valid_min')
+parser.add_argument('--statistics_path', type=str, default='statistics')
+parser.add_argument('--epochs_path', type=str, default='training_results')
+parser.add_argument('--snapshots_folder', type=str, default='snapshots/')
+parser.add_argument('--snapshots_train_data', type=str, default='Epoch_4_TrainTimes_240000.pth')
+parser.add_argument('--willy_test', type=int, default=1)
+parser.add_argument('--image_type', type=str, default='bmp')
 
 if __name__ == '__main__':
     opt = parser.parse_args()
@@ -51,12 +48,20 @@ if __name__ == '__main__':
     TRAIN_RESULT_PARAMETERS = opt.snapshots_train_data
     TRAIN_PATH = opt.train_path
     VALID_PATH = opt.valid_path
+    WILLY_TEST = opt.willy_test
+    IMAGE_TYPE = opt.image_type
+
+    # Willy Test:
+    # ------------------------------
+
+    # ------------------------------
 
     # train_set = TrainDatasetFromFolder('data/DIV2K_train_HR', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     # train_set = TrainDatasetFromFolder('data/DIV2K_test_index', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     # val_set = ValDatasetFromFolder('data/DIV2K_valid_HR', upscale_factor=UPSCALE_FACTOR)
-    train_set = TrainDatasetFromFolder(TRAIN_PATH, BK_WIDTH, BK_HEIGHT)
-    val_set = ValDatasetFromFolder(VALID_PATH, BK_WIDTH, BK_HEIGHT)
+
+    train_set = TrainDatasetFromFolder(TRAIN_PATH, BK_WIDTH, BK_HEIGHT, WILLY_TEST, IMAGE_TYPE)
+    val_set = ValDatasetFromFolder(VALID_PATH, BK_WIDTH, BK_HEIGHT, WILLY_TEST, IMAGE_TYPE)
     train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=1, shuffle=False)
 
@@ -146,7 +151,7 @@ if __name__ == '__main__':
                 g_loss = generator_criterion(fake_out, fake_img, real_img)
                 g_loss.backward()
                 optimizerG.step()
-                
+
                 # loss for current batch before optimization
                 if index < 10:
                     print('batch_size:' + str(batch_size) +
@@ -192,6 +197,7 @@ if __name__ == '__main__':
             val_bar = tqdm(val_loader)
             valing_results = {'mse': 0, 'ssims': 0, 'psnr': 0, 'ssim': 0, 'batch_sizes': 0}
             val_images = []
+
             # for val_lr, val_hr_restore, val_hr in val_bar:
             for val_lrs, val_hrs, rgbs, path in val_bar:
                 val_lr = val_lrs[index]

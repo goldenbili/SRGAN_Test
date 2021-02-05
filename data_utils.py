@@ -7,6 +7,12 @@ from torch.utils.data.dataset import Dataset
 from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, CenterCrop, Resize
 import numpy as np
 
+import cv2
+from cv2 import imread, imwrite
+
+import error_code
+from error_code import Foo
+
 
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG'])
@@ -175,37 +181,114 @@ def display_transform():
     ])
 
 
+def save_image(datas, bk_width, bk_height, num_bk_width, num_bk_height, names, index):
+
+    img_full = np.zeros((bk_width, bk_height))
+
+    if len(datas) != num_bk_width*num_bk_height:
+        Foo(error_code.CODE_ERROR_DATA_UNIT_1)
+
+    for data in datas:
+        if index == 0:
+            img_full = data.copy()
+        else:
+            img_full = np.concatenate((img_full, data), 1)
+
+    img_full.reshape((num_bk_width, num_bk_height))
+    imwrite(names + str(index) + ".png", img_full)
+
+
+def return_image_block(datas):
+    tp_list = []
+    for data in datas:
+        data = (np.asarray(data) / 255.0)
+        data_tensor = torch.from_numpy(data).float()
+        tp_list.append(data_tensor)
+    return tp_list
+
+
 class TrainDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, bk_width, bk_height):
+    def __init__(self, dataset_dir, bk_width, bk_height, b_test, img_type):
         super(TrainDatasetFromFolder, self).__init__()
         self.image_filenames = [join(dataset_dir, x) for x in listdir(dataset_dir) if is_image_file(x)]
         self.bkW = bk_width
         self.bkH = bk_height
+        self.test = b_test
+        self.img_type = img_type
 
     def __getitem__(self, index):
         bkW = self.bkW
         bkH = self.bkH
+        bTest = self.test
+        image_type = self.img_type
+
         data_orig_path = self.image_filenames[index]
         data_orig = Image.open(data_orig_path)
+        width, height = data_orig.size
+
         data_yuv444, data_yuv420, data_rgb = bgr2yuv(data_orig, bkW, bkH)
 
-        list_tensor_yuv444 = []
-        list_tensor_yuv420 = []
-        list_tensor_rgb = []
+        list_tensor_yuv444 = return_image_block(data_yuv444)
+        list_tensor_yuv420 = return_image_block(data_yuv420)
+        list_tensor_rgb = return_image_block(data_rgb)
+
+        if bTest:
+            num_BK_Width = width / bkW
+            num_BK_Height = height / bkH
+
+            save_image(data_yuv444, bkW, bkH, num_BK_Width, num_BK_Height, 'yuv444', index)
+            input()
+            save_image(data_yuv420, bkW, bkH, num_BK_Width, num_BK_Height, 'yuv420', index)
+            input()
+            save_image(data_rgb, bkW, bkH, num_BK_Width, num_BK_Height, 'rgb', index)
+            input()
+        '''
+        img_full = np.concatenate(imgs[0:w_bk_num], 1)
+        full_bk_num = w_bk_num * h_bk_num
+        for i in range(w_bk_num, full_bk_num, w_bk_num):
+            img_row = np.concatenate(imgs[i:i + w_bk_num], 1)
+            img_full = np.concatenate([img_full, img_row], 0)
+
+        imwrite("result_full_" + str(index) + ".jpg", img_full)
+        '''
+
+        '''
+        index = 0
+        img_full = np.zeros((32,32))
         for yuv444 in data_yuv444:
             yuv444 = (np.asarray(yuv444) / 255.0)
             yuv444_unit = torch.from_numpy(yuv444).float()
             list_tensor_yuv444.append(yuv444_unit)
 
+            if index == 0:
+                img_full = yuv444.copy()
+            else:
+                img_full = np.concatenate((img_full, yuv444), 1)
+            index = index + 1
+        img_full.reshape((num_BK_Height,num_BK_Width))
+        imwrite("yuv444_" + str(index) + ".png", img_full)
+
+        index = 0
+        img_full = np.zeros((32,32))
         for yuv420 in data_yuv420:
             yuv420 = (np.asarray(yuv420) / 255.0)
             yuv420_unit = torch.from_numpy(yuv420).float()
             list_tensor_yuv420.append(yuv420_unit)
+            if index == 0:
+                img_full = yuv420.copy()
+            else:
+                img_full = np.concatenate((img_full, yuv420), 1)
+            index = index + 1
+        img_full.reshape((num_BK_Height,num_BK_Width))
+        imwrite("yuv420_" + str(index) + ".png", img_full)
 
+        index = 0
+        img_full = np.zeros((32,32))
         for rgb in data_rgb:
             rgb = (np.asarray(rgb) / 255.0)
             rgb_unit = torch.from_numpy(rgb).float()
             list_tensor_rgb.append(rgb_unit)
+        '''
 
         return list_tensor_yuv420, list_tensor_yuv444, list_tensor_rgb, data_orig_path
 
@@ -214,11 +297,12 @@ class TrainDatasetFromFolder(Dataset):
 
 
 class ValDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, bk_width, bk_height):
+    def __init__(self, dataset_dir, bk_width, bk_height, b_test):
         super(ValDatasetFromFolder, self).__init__()
         self.image_filenames = [join(dataset_dir, x) for x in listdir(dataset_dir) if is_image_file(x)]
         self.bkW = bk_width
         self.bkH = bk_height
+        self.test = b_test
 
     def __getitem__(self, index):
         bkW = self.bkW
@@ -231,6 +315,8 @@ class ValDatasetFromFolder(Dataset):
         list_tensor_yuv444 = []
         list_tensor_yuv420 = []
         list_tensor_rgb = []
+
+        '''
         for yuv444 in data_yuv444:
             yuv444 = (np.asarray(yuv444) / 255.0)
             yuv444_unit = torch.from_numpy(yuv444).float()
@@ -245,7 +331,7 @@ class ValDatasetFromFolder(Dataset):
             rgb = (np.asarray(rgb) / 255.0)
             rgb_unit = torch.from_numpy(rgb).float()
             list_tensor_rgb.append(rgb_unit)
-
+        '''
         return list_tensor_yuv420, list_tensor_yuv444, list_tensor_rgb, data_orig_path
 
     def __len__(self):
