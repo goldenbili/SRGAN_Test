@@ -183,8 +183,7 @@ def display_transform():
 
 def save_image(datas, bk_width, bk_height, num_bk_width, num_bk_height, names, index):
 
-    img_full = np.zeros((bk_width, bk_height))
-
+    img_full = np.zeros((3, bk_width, bk_height))
     '''
     print('datas len:')
     print(len(datas))
@@ -194,6 +193,9 @@ def save_image(datas, bk_width, bk_height, num_bk_width, num_bk_height, names, i
     
     print('num_bk_height:')
     print(num_bk_height)
+
+    print('img_full')
+    print(img_full.shape)
     '''
 
     if len(datas) != num_bk_width*num_bk_height:
@@ -205,8 +207,12 @@ def save_image(datas, bk_width, bk_height, num_bk_width, num_bk_height, names, i
             img_full = data.copy()
         else:
             img_full = np.concatenate((img_full, data), 1)
+        if idx < 5:
+            print(str(idx))
+            print(img_full.shape)
 
-    img_full.reshape((num_bk_width, num_bk_height))
+    print(img_full.shape)
+    img_full.reshape((3, num_bk_width, num_bk_height))
     imwrite(names + str(index) + ".bmp", img_full)
 
 
@@ -250,43 +256,19 @@ class TrainDatasetFromFolder(Dataset):
                 data_orig = data_orig.resize((re_width, re_height))
                 width, height = data_orig.size
 
-        print('width' + str(width))
-        print('height' + str(height))
-        print('re_width' + str(re_width))
-        print('re_height' + str(re_height))
-
         data_yuv444, data_yuv420, data_rgb = bgr2yuv(data_orig, bkW, bkH)
-
-        print('data_yuv420:')
-        print(len(data_yuv420))
-        print('data_yuv444:')
-        print(len(data_yuv444))
-        print('data_rgb:')
-        print(len(data_rgb))
 
         list_tensor_yuv444 = return_image_block(data_yuv444)
         list_tensor_yuv420 = return_image_block(data_yuv420)
         list_tensor_rgb = return_image_block(data_rgb)
-
-        print('list_tensor_yuv420:')
-        print(len(list_tensor_yuv420))
-        print('list_tensor_yuv444:')
-        print(len(list_tensor_yuv444))
-        print('list_tensor_rgb:')
-        print(len(list_tensor_rgb))
-
-        input()
 
         if bTest:
             num_BK_Width = int(width/bkW)
             num_BK_Height = int(height/bkH)
 
             save_image(data_yuv444, bkW, bkH, num_BK_Width, num_BK_Height, 'yuv444', index)
-            input()
             save_image(data_yuv420, bkW, bkH, num_BK_Width, num_BK_Height, 'yuv420', index)
-            input()
             save_image(data_rgb, bkW, bkH, num_BK_Width, num_BK_Height, 'rgb', index)
-            input()
 
         '''
         index = 0
@@ -375,11 +357,8 @@ class ValDatasetFromFolder(Dataset):
             num_BK_Height = int(height/bkH)
 
             save_image(data_yuv444, bkW, bkH, num_BK_Width, num_BK_Height, 'yuv444', index)
-            input()
             save_image(data_yuv420, bkW, bkH, num_BK_Width, num_BK_Height, 'yuv420', index)
-            input()
             save_image(data_rgb, bkW, bkH, num_BK_Width, num_BK_Height, 'rgb', index)
-            input()
 
         '''
         for yuv444 in data_yuv444:
