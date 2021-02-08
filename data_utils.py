@@ -257,8 +257,8 @@ class TrainDatasetFromFolder(Dataset):
         list_tensor_rgb = return_image_block(data_rgb)
 
         if bTest:
-            num_BK_Width = width / bkW
-            num_BK_Height = height / bkH
+            num_BK_Width = int(width/bkW)
+            num_BK_Height = int(height/bkH)
 
             save_image(data_yuv444, bkW, bkH, num_BK_Width, num_BK_Height, 'yuv444', index)
             input()
@@ -266,7 +266,7 @@ class TrainDatasetFromFolder(Dataset):
             input()
             save_image(data_rgb, bkW, bkH, num_BK_Width, num_BK_Height, 'rgb', index)
             input()
-            
+
         '''
         img_full = np.concatenate(imgs[0:w_bk_num], 1)
         full_bk_num = w_bk_num * h_bk_num
@@ -360,8 +360,8 @@ class ValDatasetFromFolder(Dataset):
         list_tensor_rgb = return_image_block(data_rgb)
 
         if bTest:
-            num_BK_Width = width / bkW
-            num_BK_Height = height / bkH
+            num_BK_Width = int(width/bkW)
+            num_BK_Height = int(height/bkH)
 
             save_image(data_yuv444, bkW, bkH, num_BK_Width, num_BK_Height, 'yuv444', index)
             input()
