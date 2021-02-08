@@ -185,17 +185,29 @@ def save_image(datas, bk_width, bk_height, num_bk_width, num_bk_height, names, i
 
     img_full = np.zeros((bk_width, bk_height))
 
+    '''
+    print('datas len:')
+    print(len(datas))
+    
+    print('num_bk_width:')
+    print(num_bk_width)
+    
+    print('num_bk_height:')
+    print(num_bk_height)
+    '''
+
     if len(datas) != num_bk_width*num_bk_height:
         Foo(error_code.CODE_ERROR_DATA_UNIT_1)
 
-    for data in datas:
-        if index == 0:
+    for idx in range(len(datas)):
+        data = datas[idx]
+        if idx == 0:
             img_full = data.copy()
         else:
             img_full = np.concatenate((img_full, data), 1)
 
     img_full.reshape((num_bk_width, num_bk_height))
-    imwrite(names + str(index) + ".png", img_full)
+    imwrite(names + str(index) + ".bmp", img_full)
 
 
 def return_image_block(datas):
@@ -208,13 +220,16 @@ def return_image_block(datas):
 
 
 class TrainDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, bk_width, bk_height, b_test, img_type):
+    def __init__(self, dataset_dir, img_type, bk_width, bk_height, b_test, do_resize, re_width, re_height):
         super(TrainDatasetFromFolder, self).__init__()
         self.image_filenames = [join(dataset_dir, x) for x in listdir(dataset_dir) if is_image_file(x)]
         self.bkW = bk_width
         self.bkH = bk_height
         self.test = b_test
         self.img_type = img_type
+        self.do_size = do_resize
+        self.re_width = re_width
+        self.re_height = re_height
 
     def __getitem__(self, index):
         bkW = self.bkW
@@ -222,9 +237,18 @@ class TrainDatasetFromFolder(Dataset):
         bTest = self.test
         image_type = self.img_type
 
+        do_resize = self.do_size
+        re_width = self.re_width
+        re_height = self.re_height
+
         data_orig_path = self.image_filenames[index]
         data_orig = Image.open(data_orig_path)
         width, height = data_orig.size
+
+        if do_resize == 1 :
+            if re_width != width or re_height != height:
+                data_orig = data_orig.resize((re_width, re_height))
+                width, height = data_orig.size
 
         data_yuv444, data_yuv420, data_rgb = bgr2yuv(data_orig, bkW, bkH)
 
@@ -242,6 +266,7 @@ class TrainDatasetFromFolder(Dataset):
             input()
             save_image(data_rgb, bkW, bkH, num_BK_Width, num_BK_Height, 'rgb', index)
             input()
+            
         '''
         img_full = np.concatenate(imgs[0:w_bk_num], 1)
         full_bk_num = w_bk_num * h_bk_num
@@ -297,24 +322,53 @@ class TrainDatasetFromFolder(Dataset):
 
 
 class ValDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, bk_width, bk_height, b_test):
+    def __init__(self, dataset_dir, img_type, bk_width, bk_height, b_test, do_resize, re_width, re_height):
         super(ValDatasetFromFolder, self).__init__()
         self.image_filenames = [join(dataset_dir, x) for x in listdir(dataset_dir) if is_image_file(x)]
         self.bkW = bk_width
         self.bkH = bk_height
         self.test = b_test
+        self.img_type = img_type
+        self.do_size = do_resize
+        self.re_width = re_width
+        self.re_height = re_height
 
     def __getitem__(self, index):
         bkW = self.bkW
         bkH = self.bkH
+        bTest = self.test
+        image_type = self.img_type
+
+        do_resize = self.do_size
+        re_width = self.re_width
+        re_height = self.re_height
+
         data_orig_path = self.image_filenames[index]
         hr_image = Image.open(data_orig_path)
-        w, h = hr_image.size
+        width, height = hr_image.size
         data_yuv444, data_yuv420, data_rgb = bgr2yuv(hr_image, bkW, bkH)
 
-        list_tensor_yuv444 = []
-        list_tensor_yuv420 = []
-        list_tensor_rgb = []
+        if do_resize == 1 :
+            if re_width != width or re_height != height:
+                hr_image = hr_image.resize((re_width, re_height))
+                width, height = hr_image.size
+
+        data_yuv444, data_yuv420, data_rgb = bgr2yuv(hr_image, bkW, bkH)
+
+        list_tensor_yuv444 = return_image_block(data_yuv444)
+        list_tensor_yuv420 = return_image_block(data_yuv420)
+        list_tensor_rgb = return_image_block(data_rgb)
+
+        if bTest:
+            num_BK_Width = width / bkW
+            num_BK_Height = height / bkH
+
+            save_image(data_yuv444, bkW, bkH, num_BK_Width, num_BK_Height, 'yuv444', index)
+            input()
+            save_image(data_yuv420, bkW, bkH, num_BK_Width, num_BK_Height, 'yuv420', index)
+            input()
+            save_image(data_rgb, bkW, bkH, num_BK_Width, num_BK_Height, 'rgb', index)
+            input()
 
         '''
         for yuv444 in data_yuv444:

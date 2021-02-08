@@ -32,6 +32,7 @@ parser.add_argument('--epochs_path', type=str, default='training_results')
 parser.add_argument('--snapshots_folder', type=str, default='snapshots/')
 parser.add_argument('--snapshots_train_data', type=str, default='Epoch_4_TrainTimes_240000.pth')
 parser.add_argument('--willy_test', type=int, default=1)
+parser.add_argument('--do_resize', type=int, default=1)
 parser.add_argument('--image_type', type=str, default='bmp')
 
 if __name__ == '__main__':
@@ -51,6 +52,10 @@ if __name__ == '__main__':
     WILLY_TEST = opt.willy_test
     IMAGE_TYPE = opt.image_type
 
+    DO_RESIZE = opt.do_resize
+    RESIZE_WIDTH = 640
+    RESIZE_HEIGHT = 480
+
     # Willy Test:
     # ------------------------------
 
@@ -60,8 +65,15 @@ if __name__ == '__main__':
     # train_set = TrainDatasetFromFolder('data/DIV2K_test_index', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     # val_set = ValDatasetFromFolder('data/DIV2K_valid_HR', upscale_factor=UPSCALE_FACTOR)
 
-    train_set = TrainDatasetFromFolder(TRAIN_PATH, BK_WIDTH, BK_HEIGHT, WILLY_TEST, IMAGE_TYPE)
-    val_set = ValDatasetFromFolder(VALID_PATH, BK_WIDTH, BK_HEIGHT, WILLY_TEST, IMAGE_TYPE)
+    train_set = TrainDatasetFromFolder\
+        (TRAIN_PATH, IMAGE_TYPE,
+         BK_WIDTH, BK_HEIGHT,
+         WILLY_TEST, DO_RESIZE, RESIZE_WIDTH, RESIZE_HEIGHT)
+    val_set = ValDatasetFromFolder\
+        (
+            VALID_PATH, IMAGE_TYPE,
+            BK_WIDTH, BK_HEIGHT,
+            WILLY_TEST, DO_RESIZE, RESIZE_WIDTH, RESIZE_HEIGHT)
     train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=1, shuffle=False)
 
