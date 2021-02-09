@@ -200,6 +200,8 @@ def save_image(datas, bk_width, bk_height, num_bk_width, num_bk_height, names, i
 
     if len(datas) != num_bk_width*num_bk_height:
         Foo(error_code.CODE_ERROR_DATA_UNIT_1)
+    width = num_bk_width*bk_width
+    height = num_bk_height * bk_height
 
     for idx in range(len(datas)):
         data = datas[idx]
@@ -207,12 +209,17 @@ def save_image(datas, bk_width, bk_height, num_bk_width, num_bk_height, names, i
             img_full = data.copy()
         else:
             img_full = np.concatenate((img_full, data), 1)
+        '''
         if idx < 5:
             print(str(idx))
             print(img_full.shape)
+        '''
 
+    print('before reshape:')
     print(img_full.shape)
-    img_full.reshape((3, num_bk_width, num_bk_height))
+    img_full.reshape((3, width, height))
+    print('after reshape:')
+    print(img_full.shape)
     imwrite(names + str(index) + ".bmp", img_full)
 
 
