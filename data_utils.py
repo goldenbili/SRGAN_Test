@@ -10,6 +10,9 @@ import numpy as np
 import cv2
 from cv2 import imread, imwrite
 
+from torchvision.utils import save_image
+import torchvision
+
 import error_code
 from error_code import Foo
 
@@ -183,45 +186,91 @@ def display_transform():
 
 def save_image(datas, bk_width, bk_height, num_bk_width, num_bk_height, names, index):
 
-    img_full = np.zeros((3, bk_width, bk_height))
-    '''
     print('datas len:')
     print(len(datas))
-    
+
     print('num_bk_width:')
     print(num_bk_width)
-    
+
     print('num_bk_height:')
     print(num_bk_height)
 
-    print('img_full')
-    print(img_full.shape)
-    '''
-
     if len(datas) != num_bk_width*num_bk_height:
         Foo(error_code.CODE_ERROR_DATA_UNIT_1)
+
+    # 方法一： 將 tensor 轉成 numpy 格式
+    # ------------------------------------------------- #
+    save_image_from_numpy(datas, bk_width, bk_height, num_bk_width, num_bk_height, names, index)
+    # ------------------------------------------------- #
+
+
+def save_image_from_numpy(datas, bk_width, bk_height, num_bk_width, num_bk_height, names, index):
+
     width = num_bk_width*bk_width
     height = num_bk_height * bk_height
+    full_bk_num = num_bk_width*num_bk_height
 
+    img_full = np.concatenate((datas[:num_bk_width]), 2)
+    print(0)
+    print('img_full shape')
+    print(img_full.shape)
+    for col in range(num_bk_width, full_bk_num, num_bk_width):
+        img_row = np.concatenate(datas[col:col+num_bk_width], 2)
+        img_full = np.concatenate([img_full, img_row], 1)
+        print(col)
+        print('img_full shape')
+        print(img_full.shape)
+
+
+    '''
     for idx in range(len(datas)):
         data = datas[idx]
+        # data = (np.asarray(data) / 255.0)
+        # data_tensor = torch.from_numpy(data).float()
+
         if idx == 0:
             img_full = data.copy()
+            img_row = data.copy()
         else:
-            img_full = np.concatenate((img_full, data), 1)
-        '''
-        if idx < 5:
-            print(str(idx))
-            print(img_full.shape)
-        '''
+            if idx % num_bk_width == 0:
+                img_full = np.concatenate((img_full, img_row),2) 
+            else:
+                img_full = np.concatenate((img_full, data), 3)
 
+        print(idx)
+        print('img_full shape')
+        print(img_full.shape)
+    '''
+    '''
     print('before reshape:')
     print(img_full.shape)
-    img_full.reshape((3, width, height))
+    img_full = img_full.reshape((3, width, height))
     print('after reshape:')
     print(img_full.shape)
-    imwrite(names + str(index) + ".bmp", img_full)
+    '''
+    # imwrite(names + str(index) + ".bmp", img_full)
 
+    img_full = (np.asarray(img_full) / 255.0)
+    img_full = torch.from_numpy(img_full).float()
+
+
+    torchvision.utils.save_image(img_full, names + str(index) + ".bmp")
+
+
+
+def save_image_from_tensor(datas, bk_width, bk_height, num_bk_width, num_bk_height, names, index):
+
+    width = num_bk_width*bk_width
+    height = num_bk_height * bk_height
+    full_bk_num = num_bk_width*num_bk_height
+
+    image_all = torch.cat((datas[:num_bk_width]), 3)
+
+    for i in range(num_bk_width, full_bk_num, num_bk_width):
+        image_row = torch.cat(datas[i:i + num_bk_width], 3)
+        image_all = torch.cat([image_all, image_row], 2)
+
+    save_image(image_all, names + str(index) + ".bmp")
 
 def return_image_block(datas):
     tp_list = []
