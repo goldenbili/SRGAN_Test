@@ -17,9 +17,6 @@ from model import Generator, Discriminator
 
 
 parser = argparse.ArgumentParser(description='Train Super Resolution Models')
-# parser.add_argument('--crop_size', default=88, type=int, help='training images crop size')
-# parser.add_argument('--upscale_factor', default=1, type=int, choices=[1, 2, 4, 8],
-#                    help='super resolution upscale factor')
 parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
 parser.add_argument('--use_cuda', type=int, default=0)
 parser.add_argument('--batch_size', type=int, default=1)
@@ -30,8 +27,9 @@ parser.add_argument('--valid_path', type=str, default='data/valid_min')
 parser.add_argument('--statistics_path', type=str, default='statistics')
 parser.add_argument('--epochs_path', type=str, default='training_results')
 parser.add_argument('--snapshots_folder', type=str, default='snapshots/')
-parser.add_argument('--snapshots_train_data', type=str, default='Epoch_4_TrainTimes_240000.pth')
-parser.add_argument('--willy_test', type=int, default=1)
+parser.add_argument('--snapshots_Gan', type=str, default='netG.pth')
+parser.add_argument('--snapshots_Dis', type=str, default='netD.pth')
+parser.add_argument('--willy_test', type=int, default=0)
 parser.add_argument('--do_resize', type=int, default=1)
 parser.add_argument('--image_type', type=str, default='bmp')
 
@@ -45,8 +43,9 @@ if __name__ == '__main__':
     NUM_EPOCHS = opt.num_epochs
     USE_CUDA = opt.use_cuda
     BATCH_SIZE = opt.batch_size
-    TRAIN_RESULT_FOLDER = opt.snapshots_folder
-    TRAIN_RESULT_PARAMETERS = opt.snapshots_train_data
+    MODEL_FOLDER = opt.snapshots_folder
+    Gan_Model = opt.snapshots_Gan
+    Dis_Model = snapshots_Dis
     TRAIN_PATH = opt.train_path
     VALID_PATH = opt.valid_path
     WILLY_TEST = opt.willy_test
@@ -55,11 +54,6 @@ if __name__ == '__main__':
     DO_RESIZE = opt.do_resize
     RESIZE_WIDTH = 640
     RESIZE_HEIGHT = 480
-
-    # Willy Test:
-    # ------------------------------
-
-    # ------------------------------
 
     # train_set = TrainDatasetFromFolder('data/DIV2K_train_HR', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     # train_set = TrainDatasetFromFolder('data/DIV2K_test_index', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
@@ -78,17 +72,35 @@ if __name__ == '__main__':
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=1, shuffle=False)
 
     netG = Generator()
-    if TRAIN_RESULT_FOLDER:
-        if USE_CUDA == 1 and torch.cuda.is_available():
-            netG.load_state_dict(torch.load(TRAIN_RESULT_FOLDER + TRAIN_RESULT_PARAMETERS))
-        else:
-            netG.load_state_dict(torch.load(TRAIN_RESULT_FOLDER + TRAIN_RESULT_PARAMETERS, map_location='cpu'))
+    netD = Discriminator()
 
+    if os.path.isdir(MODEL_FOLDER):
+        # Gan
+        #-------------------------------------------------------------------------------------#
+        ganFile = MODEL_FOLDER + Gan_Model
+        if os.path.isfile(ganFile):
+            if USE_CUDA == 1 and torch.cuda.is_available():
+                netG.load_state_dict(torch.load(ganFile))
+            else:
+                netG.load_state_dict(torch.load(ganFile, map_location='cpu'))
+        else:
+            print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
+        # -------------------------------------------------------------------------------------#
+
+        # Dis
+        # -------------------------------------------------------------------------------------#
+        disFile = MODEL_FOLDER + Dis_Model
+        if os.path.isfile(disFile):
+            if USE_CUDA == 1 and torch.cuda.is_available():
+                netD.load_state_dict(torch.load(disFile))
+            else:
+                netD.load_state_dict(torch.load(disFile, map_location='cpu'))
+        else:
+            print('# discriminator parameters:', sum(param.numel() for param in netD.parameters()))
+        # -------------------------------------------------------------------------------------#
     else:
         print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
-
-    netD = Discriminator()
-    print('# discriminator parameters:', sum(param.numel() for param in netD.parameters()))
+        print('# discriminator parameters:', sum(param.numel() for param in netD.parameters()))
 
     generator_criterion = GeneratorLoss()
 
@@ -108,7 +120,8 @@ if __name__ == '__main__':
 
         netG.train()
         netD.train()
-
+        train_size = len(train_loader)
+        train_index = 0
         for datas, targets, rgbs, path in train_bar:
 
             for index in range(len(datas)):
@@ -117,9 +130,6 @@ if __name__ == '__main__':
                 index_size = len(datas)
                 g_update_first = True
                 batch_size = data.size(0)
-
-                if index < 10:
-                    print('epoch:' + str(epoch) + 'index:' + str(index))
 
                 running_results['batch_sizes'] += batch_size
 
@@ -165,6 +175,7 @@ if __name__ == '__main__':
                 optimizerG.step()
 
                 # loss for current batch before optimization
+                '''
                 if index < 10:
                     print('batch_size:' + str(batch_size) +
                           ' g_loss:' + str(g_loss.item() * batch_size) +
@@ -172,6 +183,7 @@ if __name__ == '__main__':
                           ' d_score:' + str(real_out.item() * batch_size) +
                           ' g_score:' + str(fake_out.item() * batch_size)
                           )
+                '''
 
                 running_results['g_loss'] += g_loss.item() * batch_size
                 running_results['d_loss'] += d_loss.item() * batch_size
@@ -189,7 +201,7 @@ if __name__ == '__main__':
                             running_results['batch_sizes']
                             )
                 )
-
+                train_index = train_index + 1
                 '''
                 train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f' % (
                     epoch, NUM_EPOCHS, 

@@ -282,7 +282,8 @@ def return_image_block(datas):
 
 
 class TrainDatasetFromFolder(Dataset):
-    def __init__(self, dataset_dir, img_type, bk_width, bk_height, b_test, do_resize, re_width, re_height):
+    def __init__(self, dataset_dir, img_type,
+                 bk_width, bk_height, b_test, do_resize, re_width, re_height):
         super(TrainDatasetFromFolder, self).__init__()
         self.image_filenames = [join(dataset_dir, x) for x in listdir(dataset_dir) if is_image_file(x)]
         self.bkW = bk_width
