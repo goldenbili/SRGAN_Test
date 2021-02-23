@@ -45,7 +45,7 @@ if __name__ == '__main__':
     BATCH_SIZE = opt.batch_size
     MODEL_FOLDER = opt.snapshots_folder
     Gan_Model = opt.snapshots_Gan
-    Dis_Model = snapshots_Dis
+    Dis_Model = opt.snapshots_Dis
     TRAIN_PATH = opt.train_path
     VALID_PATH = opt.valid_path
     WILLY_TEST = opt.willy_test
@@ -55,6 +55,30 @@ if __name__ == '__main__':
     RESIZE_WIDTH = 640
     RESIZE_HEIGHT = 480
 
+    # test-20210223: print parameters
+    '''
+    --snapshots_folder=$Path_snapshot \
+    --snapshots_Gan=$Gan_model \
+    --snapshots_Dis=$Dis_model \
+    --train_path=$Path_train \
+    --valid_path=$Path_valid \
+    --statistics=path $statisticsPaht/ \
+    --epochs_path=$traininPaht/ \
+    '''
+    print('$Path_snapshot:')
+    print(opt.snapshots_folder)
+    print('$Gan_model')
+    print(opt.snapshots_Gan)
+    print('$Dis_model')
+    print(opt.snapshots_Dis)
+    print('$Path_train')
+    print(opt.train_path)
+    print('$Path_valid')
+    print(opt.valid_path)
+    print('$statisticsPath:')
+    print(opt.statistics_path)
+    print('$traininPath:')
+    print(opt.epochs_path)
     # train_set = TrainDatasetFromFolder('data/DIV2K_train_HR', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     # train_set = TrainDatasetFromFolder('data/DIV2K_test_index', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     # val_set = ValDatasetFromFolder('data/DIV2K_valid_HR', upscale_factor=UPSCALE_FACTOR)
