@@ -218,14 +218,14 @@ if __name__ == '__main__':
                     desc='epochs:[%d/%d] index:[%d/%d] Loss_D: %.4f '
                          'Loss_G: %.4f D(x): %.4f D(G(z)): %.4f batch_size: %d '
                          % (epoch, NUM_EPOCHS, index, index_size,
-                            running_results['d_loss'],
-                            running_results['g_loss'],
-                            running_results['d_score'],
-                            running_results['g_score'],
+                            running_results['d_loss'] / running_results['batch_sizes'],
+                            running_results['g_loss'] / running_results['batch_sizes'],
+                            running_results['d_score'] / running_results['batch_sizes'],
+                            running_results['g_score'] / running_results['batch_sizes'],
                             running_results['batch_sizes']
                             )
                 )
-                train_index = train_index + 1
+
                 '''
                 train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f' % (
                     epoch, NUM_EPOCHS, 
@@ -234,6 +234,7 @@ if __name__ == '__main__':
                     running_results['d_score'] / running_results['batch_sizes'],
                     running_results['g_score'] / running_results['batch_sizes']))
                 '''
+                train_index = train_index + 1
 
         out_path = 'training_results/SRF_' + str(epoch) + '/'
         if not os.path.exists(out_path):
